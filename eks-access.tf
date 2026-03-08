@@ -2,7 +2,7 @@
 
 # ----------------------------------------------------------------
 # PERMISSÃO PARA A ROLE DE INFRAESTRUTURA (a que você já tem)
-# Permite que o Terraform da infraestrutura gerencie o cluster.
+# Permite que o Terraform da infraestrutura gerencie o cluster.1
 # ----------------------------------------------------------------
 resource "aws_eks_access_entry" "infra_actions_access" {
   cluster_name  = aws_eks_cluster.cluster.name
