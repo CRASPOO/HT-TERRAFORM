@@ -1,0 +1,137 @@
+name: 'Terraform CI/CD'
+
+# Gatilhos do workflow
+on:
+  # Aciona em pushes para a branch 'main' (após um merge de PR)
+  push:
+    branches:
+      - main
+  # Aciona também na criação ou atualização de Pull Requests
+  pull_request:
+
+  # Permite acionamento manual para o destroy
+  workflow_dispatch:
+    inputs:
+      destroy:
+        description: 'Marque para destruir a infraestrutura. CUIDADO!'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write   # Necessário para autenticação OIDC com a AWS
+  contents: read    # Para fazer o checkout do código
+  pull-requests: write # Para poder comentar o 'plan' no PR
+
+jobs:
+  # Este job roda para Pull Requests e não precisa de alterações
+  terraform-plan:
+    name: 'Terraform Plan'
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false
+        continue-on-error: true
+
+      - name: Update PR with Plan
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const output = `#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            <details><summary>Validation Output</summary>
+
+            \`\`\`
+            ${{ steps.validate.outputs.stdout }}
+            \`\`\`
+
+            </details>
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            <details><summary>Show Plan</summary>
+
+            \`\`\`
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+
+            </details>
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+  # Este job roda APÓS o merge na 'main'
+  terraform-apply:
+    name: 'Terraform Apply'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+
+      # 🚀 MUDANÇA: Agora é apenas uma etapa de apply para TUDO.
+      - name: 'Terraform Apply: Aplicar Infraestrutura'
+        run: terraform apply -auto-approve -input=false
+
+---
+
+# Este job roda manualmente para o destroy
+terraform-destroy:
+  name: 'Terraform Destroy'
+  if: github.event_name == 'workflow_dispatch' && github.event.inputs.destroy == 'true'
+  runs-on: ubuntu-latest
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure AWS Credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Terraform Init
+      run: terraform init
+
+    # 💣 MUDANÇA: Agora é apenas uma etapa de destroy para TUDO.
+    - name: 'Terraform Destroy: Destruir Infraestrutura'
+      run: terraform destroy -auto-approve -input=false
