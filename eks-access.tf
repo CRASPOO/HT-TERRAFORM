@@ -6,13 +6,13 @@
 # ----------------------------------------------------------------
 resource "aws_eks_access_entry" "infra_actions_access" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::579375260812:role/GitHubActionRole-DatabaseInfra"
+  principal_arn = "arn:aws:iam::579375260812:role/GitHubActionsTerraformRole"
   type          = "STANDARD"
 }
 
 resource "aws_eks_access_policy_association" "infra_actions_admin_policy" {
   cluster_name  = aws_eks_cluster.cluster.name
-  principal_arn = "arn:aws:iam::579375260812:role/GitHubActionRole-DatabaseInfra"
+  principal_arn = "arn:aws:iam::579375260812:role/GitHubActionsTerraformRole"
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
