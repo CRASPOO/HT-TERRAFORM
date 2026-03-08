@@ -105,7 +105,7 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-      # 🚀 MUDANÇA: Agora é apenas uma etapa de apply para TUDO.
+      # 🚀 MUDANÇA: Agora é apenas uma etapa de apply para TUDO.1
       - name: 'Terraform Apply: Aplicar Infraestrutura'
         run: terraform apply -auto-approve -input=false
 
