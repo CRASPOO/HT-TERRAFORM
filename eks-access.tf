@@ -24,7 +24,7 @@ resource "aws_eks_access_policy_association" "infra_actions_admin_policy" {
 
 
 # ----------------------------------------------------------------
-# PERMISSÃO PARA A ROLE DA APLICAÇÃO (a que está faltando)
+# PERMISSÃO PARA A ROLE DA APLICAÇÃO (a que está faltando)1
 # Permite que o pipeline de CI/CD da aplicação faça deploy.
 # ----------------------------------------------------------------
 resource "aws_eks_access_entry" "app_deploy_actions_access" {
