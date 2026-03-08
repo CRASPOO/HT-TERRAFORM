@@ -132,6 +132,6 @@ terraform-destroy:
     - name: Terraform Init
       run: terraform init
 
-    # 💣 MUDANÇA: Agora é apenas uma etapa de destroy para TUDO.
+    # 💣 MUDANÇA: Agora é apenas uma etapa de destroy para TUDOo.
     - name: 'Terraform Destroy: Destruir Infraestrutura'
       run: terraform destroy -auto-approve -input=false
